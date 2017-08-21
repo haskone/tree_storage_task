@@ -1,5 +1,5 @@
 import unittest
-from src.server_api import add_nodes, get_trees
+from tree_storage.server_api import add_nodes, get_trees
 
 
 class TestApi(unittest.TestCase):

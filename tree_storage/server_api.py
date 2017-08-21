@@ -6,9 +6,16 @@ from flask import json
 from flask import request
 
 import config
-from storage import Storage
+from tree_storage.storage import Storage
 
 app = Flask(__name__)
+
+handler = RotatingFileHandler(config.log_file, maxBytes=10000, backupCount=1)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+
 storage = Storage(config.db_url)
 
 
@@ -34,7 +41,7 @@ def add_nodes():
         # Despite this response is not a part of
         # the original requirements,
         # we need to answer something in case of
-        # bad input
+        # "bad" input
         data = {"error": "Broken input"}
         code = 400
 
@@ -58,10 +65,4 @@ def get_trees(node_id):
     return response
 
 if __name__ == '__main__':
-    handler = RotatingFileHandler(config.log_file, maxBytes=10000, backupCount=1)
-    handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    app.logger.addHandler(handler)
-
     app.run()

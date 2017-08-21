@@ -1,6 +1,7 @@
 import unittest
 from sqlalchemy.ext.declarative import declarative_base
-from src.storage_old import Storage, Node
+from tree_storage.storage import Storage
+from tree_storage.model import Node
 
 Base = declarative_base()
 
