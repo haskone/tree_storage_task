@@ -14,6 +14,16 @@ class Storage(object):
         self.session = session()
 
     def add_nodes(self, node_id, parent_id):
+        """
+        Add/Update one bind to the storage which
+        represents two node.
+
+        Add in case of node_id doesn't find in storage but
+        update an existing bind without checking parent.
+
+        :param node_id: string representation of node id
+        :param parent_id: string representation of parent node id for node_id
+        """
         if not self.session.query(Node).filter(Node.node_id == node_id).scalar():
             # create new
             node = Node(node_id=node_id, parent_id=parent_id)
@@ -25,6 +35,8 @@ class Storage(object):
             self.session.commit()
 
     def _get_child_lists(self, node_id):
+        # Grab all children using recursion. Probably, should be rewritten with
+        # ORM(SQL) interface but not such silly way
         nodes = self.session.query(Node).filter(Node.parent_id == node_id).all()
         children = []
         for node in nodes:
@@ -37,13 +49,20 @@ class Storage(object):
         return children
 
     def _get_parents(self, node_id):
+        # Simple recursion for getting all parents
         node = self.session.query(Node).filter(Node.node_id == node_id).scalar()
         if node is not None and node.parent_id is not None:
-            return [node.parent_id] + self._get_parents(node.parent_id)
+            return self._get_parents(node.parent_id) + [node.parent_id]
         else:
             return []
 
     def get_trees(self, node_id):
+        """
+        Get all chains for specified node.
+
+        :param node_id: a node id for which need to return connected chains
+        :return: data as [[<root node id>, ..., <leaf node id>], ..., [<another leaf>]]
+        """
         data = []
         node = self.session.query(Node).filter(Node.node_id == node_id)
         if node is not None:
@@ -53,9 +72,18 @@ class Storage(object):
             if not data:
                 # no child - just put a one chain with a parent part
                 data.append(parent_part + [node_id])
-        return {'trees': data}
+        return data
 
     def is_loop(self, nodes):
+        """
+        Check whether or not one of particular binds
+        brings loop to the tree.
+
+        Reject all nodes in case of one of them is broken
+
+        :param nodes: new nodes
+        :return: True/False - is it loop or not
+        """
         for node in nodes:
             node_id = node['id']
             parent_id = node['parent']
